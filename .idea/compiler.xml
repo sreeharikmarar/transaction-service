@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <bytecodeTargetLevel>
+      <module name="com.transaction.transaction-service.main" target="1.8" />
+      <module name="com.transaction.transaction-service.test" target="1.8" />
+      <module name="latest.transaction-service.main" target="1.8" />
+      <module name="latest.transaction-service.test" target="1.8" />
+      <module name="transaction-service.main" target="1.8" />
+      <module name="transaction-service.test" target="1.8" />
+    </bytecodeTargetLevel>
+  </component>
+</project>
