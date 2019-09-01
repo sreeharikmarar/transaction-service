@@ -3,6 +3,7 @@ package com.transaction.controllers;
 import com.google.inject.Inject;
 import com.transaction.model.Account;
 import com.transaction.services.AccountService;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
@@ -27,15 +28,19 @@ public class AccountController {
             .encode()
           );
       } else {
-        response.putHeader("content-type", "application/json; charset=utf-8");
-        response.setStatusCode(400);
-        response.end(new JsonObject()
-          .put("timestamp", System.nanoTime())
-          .put("error", "Invalid Request")
-          .put("message", "Invalid AccountNumber")
-          .encode());
+        sendError(response, "Invalid AccountNumber");
       }
     });
+  }
+
+  private void sendError(HttpServerResponse response, String s) {
+    response.putHeader("content-type", "application/json; charset=utf-8");
+    response.setStatusCode(400);
+    response.end(new JsonObject()
+      .put("timestamp", System.nanoTime())
+      .put("error", "Invalid Request")
+      .put("message", s)
+      .encode());
   }
 
   public void createAccount(RoutingContext routingContext) {
@@ -45,13 +50,7 @@ public class AccountController {
     try {
       request = Json.decodeValue(routingContext.getBodyAsString(), AccountRequest.class);
     } catch (io.vertx.core.json.DecodeException e) {
-      response.putHeader("content-type", "application/json; charset=utf-8");
-      response.setStatusCode(400);
-      response.end(new JsonObject()
-        .put("timestamp", System.nanoTime())
-        .put("error", "Invalid Request")
-        .put("message", e.getMessage())
-        .encode());
+      sendError(response, e.getMessage());
     }
 
     Account account = Account.builder()
@@ -60,13 +59,7 @@ public class AccountController {
 
     service.getById(account.getAccountNumber()).setHandler(r -> {
       if (r.succeeded()) {
-        response.putHeader("content-type", "application/json; charset=utf-8");
-        response.setStatusCode(400);
-        response.end(new JsonObject()
-          .put("timestamp", System.nanoTime())
-          .put("error", "Invalid Request")
-          .put("message", "Account already exists")
-          .encode());
+        sendError(response, "Account already exists");
       } else {
         service.save(account).setHandler(res -> {
           if (res.succeeded()) {
@@ -77,12 +70,7 @@ public class AccountController {
                 .encode()
               );
           } else {
-            response.setStatusCode(500);
-            response.end(new JsonObject()
-              .put("timestamp", System.nanoTime())
-              .put("error", "Invalid Request")
-              .put("message", "Server Error")
-              .encode());
+            sendServerError(response, res);
           }
         });
       }
@@ -97,26 +85,14 @@ public class AccountController {
     try {
       request = Json.decodeValue(routingContext.getBodyAsString(), AccountUpdateRequest.class);
     } catch (io.vertx.core.json.DecodeException e) {
-      response.putHeader("content-type", "application/json; charset=utf-8");
-      response.setStatusCode(400);
-      response.end(new JsonObject()
-        .put("timestamp", System.nanoTime())
-        .put("error", "Invalid Request")
-        .put("message", e.getMessage())
-        .encode());
+      sendError(response, e.getMessage());
     }
 
     final AccountUpdateRequest finalRequest = request;
 
     service.getById(accountNumber).setHandler(r -> {
       if (!r.succeeded()) {
-        response.putHeader("content-type", "application/json; charset=utf-8");
-        response.setStatusCode(400);
-        response.end(new JsonObject()
-          .put("timestamp", System.nanoTime())
-          .put("error", "Invalid Request")
-          .put("message", "Account doesnt exists")
-          .encode());
+        sendError(response, "Account doesnt exists");
       } else {
         Account account = Json.decodeValue(r.result().toString(), Account.class);
         account.setBalance(finalRequest.getBalance());
@@ -125,43 +101,24 @@ public class AccountController {
     });
   }
 
-
   public void transferAmount(RoutingContext routingContext) {
     HttpServerResponse response = routingContext.response();
     TransferRequest request = null;
     try {
       request = Json.decodeValue(routingContext.getBodyAsString(), TransferRequest.class);
     } catch (io.vertx.core.json.DecodeException e) {
-      response.putHeader("content-type", "application/json; charset=utf-8");
-      response.setStatusCode(400);
-      response.end(new JsonObject()
-        .put("timestamp", System.nanoTime())
-        .put("error", "Invalid Request")
-        .put("message", e.getMessage())
-        .encode());
+      sendError(response, e.getMessage());
     }
 
     final TransferRequest finalRequest = request;
 
     service.getById(finalRequest.getFromAccount()).setHandler(fromAccount -> {
       if (!fromAccount.succeeded()) {
-        response.putHeader("content-type", "application/json; charset=utf-8");
-        response.setStatusCode(400);
-        response.end(new JsonObject()
-          .put("timestamp", System.nanoTime())
-          .put("error", "Invalid Request")
-          .put("message", "Invalid FromAccount")
-          .encode());
+        sendError(response, "Invalid FromAccount");
       } else {
         service.getById(finalRequest.getToAccount()).setHandler(toAccount -> {
           if (!toAccount.succeeded()) {
-            response.putHeader("content-type", "application/json; charset=utf-8");
-            response.setStatusCode(400);
-            response.end(new JsonObject()
-              .put("timestamp", System.nanoTime())
-              .put("error", "Invalid Request")
-              .put("message", "Invalid ToAccount")
-              .encode());
+            sendError(response, "Invalid ToAccount");
           } else {
             Account fromAcnt = Json.decodeValue(fromAccount.result().toString(), Account.class);
 
@@ -170,13 +127,7 @@ public class AccountController {
               .subtract(BigDecimal.valueOf(finalRequest.getAmount()))
               .doubleValue()) < 0) {
 
-              response.putHeader("content-type", "application/json; charset=utf-8");
-              response.setStatusCode(400);
-              response.end(new JsonObject()
-                .put("timestamp", System.nanoTime())
-                .put("error", "Invalid Request")
-                .put("message", "Insufficient Fund")
-                .encode());
+              sendError(response, "Insufficient Fund");
             } else {
               Account fa = Json.decodeValue(fromAccount.result().toString(), Account.class);
               Account ta = Json.decodeValue(toAccount.result().toString(), Account.class);
@@ -194,12 +145,32 @@ public class AccountController {
 
               service.update(fa).setHandler(res -> {
                 if (res.succeeded()) {
-                  updateAccountDetails(response, fa);
+                  updateFromAndToAccountDetails(response, ta, res);
+                } else {
+                  sendServerError(response, res);
                 }
               });
             }
           }
         });
+      }
+    });
+  }
+
+  private void updateFromAndToAccountDetails(HttpServerResponse response, Account toAccount, AsyncResult<JsonObject> res) {
+    service.update(toAccount).setHandler(re -> {
+      if (re.succeeded()) {
+        response.putHeader("content-type", "application/json; charset=utf-8");
+        response.end(new JsonObject()
+          .put("accountNumber", res.result().getString("accountNumber"))
+          .put("balance", res.result().getFloat("balance"))
+          .encode());
+      } else {
+        response.end(new JsonObject()
+          .put("timestamp", System.nanoTime())
+          .put("error", "Invalid Request")
+          .put("message", "System Error")
+          .encode());
       }
     });
   }
@@ -220,5 +191,14 @@ public class AccountController {
           .encode());
       }
     });
+  }
+
+  private void sendServerError(HttpServerResponse response, AsyncResult<JsonObject> res) {
+    response.setStatusCode(500);
+    response.end(new JsonObject()
+      .put("timestamp", System.nanoTime())
+      .put("error", "Server Error")
+      .put("message", res.cause())
+      .encode());
   }
 }
