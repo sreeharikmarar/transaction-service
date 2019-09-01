@@ -17,6 +17,7 @@ public class AppInjector extends AbstractModule {
     protected void configure() {
         JsonObject mongoConfig = new JsonObject()
             .put("connection_string", "mongodb://localhost:27017")
+//            .put("useObjectId", true)
             .put("db_name", "test");
 
         MongoClient mongo = MongoClient.createShared(vertx, mongoConfig);

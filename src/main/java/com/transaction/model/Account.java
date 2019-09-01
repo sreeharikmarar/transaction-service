@@ -1,6 +1,7 @@
 package com.transaction.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+
 import java.math.BigDecimal;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -9,8 +10,16 @@ public class Account {
   private String accountNumber;
   private BigDecimal balance;
 
-  public String get_id() {
-    return _id;
+  public void setAccountNumber(String accountNumber) {
+    this.accountNumber = accountNumber;
+  }
+
+  public void set_id(String _id) {
+    this._id = _id;
+  }
+
+  public void setBalance(BigDecimal balance) {
+    this.balance = balance;
   }
 
   public String getAccountNumber() {
@@ -27,7 +36,7 @@ public class Account {
 
   public static final class Builder {
     private String accountNumber;
-    private BigDecimal balance;
+    private BigDecimal balance = BigDecimal.ZERO;
 
     private Builder() {
     }
@@ -44,17 +53,18 @@ public class Account {
 
     public Account build() {
       Account account = new Account();
+      account.balance = balance;
       account.accountNumber = this.accountNumber;
-      account.balance = this.balance;
       return account;
     }
+  }
 
-    @Override
-    public String toString() {
-      return "{" +
-        ", accountNumber='" + accountNumber + '\'' +
-        ", balance=" + balance +
-        '}';
-    }
+  @Override
+  public String toString() {
+    return "Account{" +
+      "_id='" + _id + '\'' +
+      ", accountNumber='" + accountNumber + '\'' +
+      ", balance=" + balance +
+      '}';
   }
 }
