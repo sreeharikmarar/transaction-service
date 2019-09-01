@@ -21,6 +21,56 @@ To run your application:
 ./gradlew clean run
 ```
 
+To try out the application:
+```
+
+Create Account:
+
+curl -X POST \
+  http://localhost:8888/api/accounts/ \
+  -H 'Content-Type: application/json' \
+  -H 'Postman-Token: 267334e1-8adb-49f5-8c96-3f8bec973c72' \
+  -H 'cache-control: no-cache' \
+  -d '{
+	"accountNumber": "123"
+}'
+
+
+Get Account:
+
+curl -X GET \
+  http://localhost:8888/api/accounts/123 \
+  -H 'Postman-Token: a095d298-93db-42c7-b3b8-11d8eef242c5' \
+  -H 'cache-control: no-cache'
+
+
+Update Account:
+
+curl -X PUT \
+  http://localhost:8888/api/accounts/1233 \
+  -H 'Content-Type: application/json' \
+  -H 'Postman-Token: 7901f23b-08fa-44e1-8299-33208f763072' \
+  -H 'cache-control: no-cache' \
+  -d '{
+	"balance": 39.228
+}'
+
+
+Transfer Amount Between Accounts:
+
+curl -X POST \
+  http://localhost:8888/api/accounts/transfer \
+  -H 'Content-Type: application/json' \
+  -H 'Postman-Token: b632ba6b-8b95-4bfa-a940-c6edb9cffbb2' \
+  -H 'cache-control: no-cache' \
+  -d '{
+	"fromAccount": "123",
+	"toAccount": "345",
+	"amount":111.23
+}'
+
+```
+
 == Help
 
 * https://vertx.io/docs/[Vert.x Documentation]
