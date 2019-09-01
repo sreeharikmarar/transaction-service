@@ -33,16 +33,6 @@ public class AccountController {
     });
   }
 
-  private void sendError(HttpServerResponse response, String s) {
-    response.putHeader("content-type", "application/json; charset=utf-8");
-    response.setStatusCode(400);
-    response.end(new JsonObject()
-      .put("timestamp", System.nanoTime())
-      .put("error", "Invalid Request")
-      .put("message", s)
-      .encode());
-  }
-
   public void createAccount(RoutingContext routingContext) {
     HttpServerResponse response = routingContext.response();
     AccountRequest request = null;
@@ -199,6 +189,16 @@ public class AccountController {
       .put("timestamp", System.nanoTime())
       .put("error", "Server Error")
       .put("message", res.cause())
+      .encode());
+  }
+
+  private void sendError(HttpServerResponse response, String s) {
+    response.putHeader("content-type", "application/json; charset=utf-8");
+    response.setStatusCode(400);
+    response.end(new JsonObject()
+      .put("timestamp", System.nanoTime())
+      .put("error", "Invalid Request")
+      .put("message", s)
       .encode());
   }
 }
