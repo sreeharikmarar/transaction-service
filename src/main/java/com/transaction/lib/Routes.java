@@ -13,7 +13,8 @@ import io.vertx.ext.web.handler.BodyHandler;
 
 public class Routes {
   public Router getRoutes(Vertx vertx) {
-    Router router = Router.router(vertx);
+    Vertx cachedVertx = Vertx.vertx();
+    Router router = Router.router(cachedVertx);
 
     router.route().failureHandler(ctx -> {
       final JsonObject json = new JsonObject()
@@ -37,10 +38,11 @@ public class Routes {
         .end("Welcome");
     });
 
-    vertx.executeBlocking(future -> {
+    cachedVertx.executeBlocking(future -> {
       Injector i = Guice.createInjector(new AppInjector(vertx));
       AccountController account = i.getInstance(AccountController.class);
       router.route("/api/*").handler(BodyHandler.create());
+
       router.get("/api/accounts/:id").handler(account::getAccount);
       router.post("/api/accounts").handler(account::createAccount);
       router.put("/api/accounts/:id").handler(account::updateAccount);
